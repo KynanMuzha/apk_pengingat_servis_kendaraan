@@ -24,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (result != null) {
-      box.add(result); // 🔥 simpan ke Hive
+      box.add(result);
     }
   }
 
@@ -119,7 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       box.isEmpty
                                           ? "Belum ada kendaraan"
                                           : "${box.length} kendaraan terdaftar",
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         color: AppColors.textSecondary,
                                         fontSize: 13,
                                       ),
@@ -152,8 +152,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           valueListenable: box.listenable(),
                           builder: (context, Box<Kendaraan> box, _) {
 
+                            final vehicles = box.values.toList();
+
                             // EMPTY STATE
-                            if (box.isEmpty) {
+                            if (vehicles.isEmpty) {
                               return Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -211,7 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                                   const SizedBox(height: 10),
 
-                                  Text(
+                                  const Text(
                                     "Tambahkan kendaraan untuk mulai memantau jadwal servis dengan mudah.",
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
@@ -246,13 +248,14 @@ class _HomeScreenState extends State<HomeScreen> {
                             // LIST DATA
                             return ListView.builder(
                               padding: const EdgeInsets.only(bottom: 100),
-                              itemCount: box.length,
+                              itemCount: vehicles.length,
                               itemBuilder: (context, index) {
-                                final kendaraan = box.getAt(index)!;
+                                final kendaraan = vehicles[index];
 
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 15),
+                                return AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 300),
                                   child: KendaraanCard(
+                                    key: ValueKey(kendaraan.key),
                                     kendaraan: kendaraan,
                                   ),
                                 );
@@ -301,6 +304,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
 
+      // ================= FAB =================
       floatingActionButton: ValueListenableBuilder(
         valueListenable: box.listenable(),
         builder: (context, Box<Kendaraan> box, _) {
@@ -336,7 +340,6 @@ class NavItem extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-
         AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           padding: const EdgeInsets.all(8),
@@ -354,9 +357,7 @@ class NavItem extends StatelessWidget {
                 : AppColors.textSecondary,
           ),
         ),
-
         const SizedBox(height: 4),
-
         Text(
           label,
           style: TextStyle(

@@ -24,13 +24,30 @@ class Kendaraan extends HiveObject {
     required this.servisTerakhir,
   });
 
-  // 🔥 Hitung servis berikutnya
+  // ================= LOGIC =================
+
+  /// 🔥 Hitung servis berikutnya
   DateTime get servisBerikutnya {
     return servisTerakhir.add(Duration(days: interval));
   }
 
-  // 🔥 Status
+  /// 🔥 Selisih hari ke servis berikutnya
+  int get sisaHari {
+    return servisBerikutnya.difference(DateTime.now()).inDays;
+  }
+
+  /// 🔥 Status: terlambat
+  bool get isOverdue {
+    return sisaHari < 0;
+  }
+
+  /// 🔥 Status: urgent (0–3 hari)
   bool get isUrgent {
-    return servisBerikutnya.isBefore(DateTime.now());
+    return sisaHari >= 0 && sisaHari <= 3;
+  }
+
+  /// 🔥 Status: hampir (4–7 hari)
+  bool get isSoon {
+    return sisaHari > 3 && sisaHari <= 7;
   }
 }

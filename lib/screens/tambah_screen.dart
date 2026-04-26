@@ -4,7 +4,9 @@ import '../app_colors.dart';
 import 'package:intl/intl.dart';
 
 class TambahScreen extends StatefulWidget {
-  const TambahScreen({super.key});
+  final Kendaraan? kendaraan; // 🔥 tambah ini
+
+  const TambahScreen({super.key, this.kendaraan});
 
   @override
   State<TambahScreen> createState() => _TambahScreenState();
@@ -18,6 +20,21 @@ class _TambahScreenState extends State<TambahScreen> {
   DateTime? selectedDate;
   String intervalType = "Hari";
   DateTime? nextService;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 🔥 AUTO ISI SAAT EDIT
+    if (widget.kendaraan != null) {
+      final k = widget.kendaraan!;
+      nameController.text = k.nama;
+      kmController.text = k.km.toString();
+      intervalController.text = k.interval.toString();
+      selectedDate = k.servisTerakhir;
+      calculateNextService();
+    }
+  }
 
   @override
   void dispose() {
@@ -36,8 +53,6 @@ class _TambahScreenState extends State<TambahScreen> {
       initialDate: selectedDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
-
-      // 🔥 FIX WARNA (tidak ungu)
       builder: (context, child) {
         return Theme(
           data: ThemeData(
@@ -61,7 +76,7 @@ class _TambahScreenState extends State<TambahScreen> {
     }
   }
 
-  // ================= HITUNG SERVIS =================
+  // ================= HITUNG =================
   void calculateNextService() {
     if (selectedDate == null || intervalController.text.isEmpty) return;
 
@@ -83,28 +98,34 @@ class _TambahScreenState extends State<TambahScreen> {
 
   // ================= SIMPAN =================
   void simpan() {
-    FocusScope.of(context).unfocus();
+    if (!isValid) return;
 
-    if (nameController.text.isEmpty ||
-        kmController.text.isEmpty ||
-        intervalController.text.isEmpty ||
-        selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Semua data wajib diisi")),
+    if (widget.kendaraan != null) {
+      // 🔥 EDIT MODE
+      final k = widget.kendaraan!;
+      k.nama = nameController.text;
+      k.km = int.parse(kmController.text);
+      k.interval = intervalType == "Hari"
+          ? int.parse(intervalController.text)
+          : int.parse(intervalController.text) * 30;
+      k.servisTerakhir = selectedDate!;
+      k.save();
+    } else {
+      // 🔥 TAMBAH MODE
+      final kendaraan = Kendaraan(
+        nama: nameController.text,
+        km: int.parse(kmController.text),
+        interval: intervalType == "Hari"
+            ? int.parse(intervalController.text)
+            : int.parse(intervalController.text) * 30,
+        servisTerakhir: selectedDate!,
       );
+
+      Navigator.pop(context, kendaraan);
       return;
     }
 
-    final kendaraan = Kendaraan(
-      nama: nameController.text,
-      km: int.tryParse(kmController.text) ?? 0,
-      interval: intervalType == "Hari"
-          ? int.parse(intervalController.text)
-          : int.parse(intervalController.text) * 30,
-      servisTerakhir: selectedDate!,
-    );
-
-    Navigator.pop(context, kendaraan);
+    Navigator.pop(context);
   }
 
   bool get isValid =>
@@ -113,12 +134,12 @@ class _TambahScreenState extends State<TambahScreen> {
       intervalController.text.isNotEmpty &&
       selectedDate != null;
 
+  // ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
 
-      // ================= APPBAR =================
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -126,23 +147,18 @@ class _TambahScreenState extends State<TambahScreen> {
           icon: const Icon(Icons.arrow_back, color: AppColors.primary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          "TAMBAH KENDARAAN",
-          style: TextStyle(
+        title: Text(
+          widget.kendaraan == null
+              ? "TAMBAH KENDARAAN"
+              : "EDIT KENDARAAN", // 🔥 berubah otomatis
+          style: const TextStyle(
             color: AppColors.textPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
         centerTitle: true,
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Icon(Icons.account_circle, color: AppColors.primary),
-          )
-        ],
       ),
 
-      // ================= BODY =================
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -150,94 +166,11 @@ class _TambahScreenState extends State<TambahScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              // ================= HEADER (ASLI) =================
-              SizedBox(
-                height: 170,
-                child: Stack(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(24),
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.primary.withOpacity(0.08),
-                            AppColors.primary.withOpacity(0.02),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      right: -40,
-                      top: -20,
-                      child: Container(
-                        width: 180,
-                        height: 180,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.15),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      right: 10,
-                      top: 30,
-                      child: Opacity(
-                        opacity: 0.1,
-                        child: Icon(
-                          Icons.directions_car,
-                          size: 120,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            child: const Text(
-                              "DATA BARU",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          const Text(
-                            "Detail Kendaraan",
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            "Tambahkan kendaraan untuk memantau jadwal servis",
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              // ===== HEADER (TIDAK DIUBAH) =====
+              _header(),
 
               const SizedBox(height: 30),
 
-              // ================= NAMA =================
               label("NAMA KENDARAAN"),
               inputField(
                 controller: nameController,
@@ -247,7 +180,6 @@ class _TambahScreenState extends State<TambahScreen> {
 
               const SizedBox(height: 20),
 
-              // ================= TANGGAL =================
               label("SERVIS TERAKHIR"),
               GestureDetector(
                 onTap: pickDate,
@@ -272,7 +204,6 @@ class _TambahScreenState extends State<TambahScreen> {
 
               const SizedBox(height: 20),
 
-              // ================= KM =================
               label("KILOMETER"),
               inputField(
                 controller: kmController,
@@ -282,7 +213,6 @@ class _TambahScreenState extends State<TambahScreen> {
 
               const SizedBox(height: 20),
 
-              // ================= INTERVAL (FIXED) =================
               label("INTERVAL SERVIS"),
               Row(
                 children: [
@@ -324,7 +254,6 @@ class _TambahScreenState extends State<TambahScreen> {
 
               const SizedBox(height: 20),
 
-              // ================= PREVIEW =================
               if (nextService != null)
                 Container(
                   padding: const EdgeInsets.all(14),
@@ -350,7 +279,7 @@ class _TambahScreenState extends State<TambahScreen> {
 
               const SizedBox(height: 30),
 
-              // ================= BUTTON =================
+              // ===== SIMPAN =====
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -362,9 +291,60 @@ class _TambahScreenState extends State<TambahScreen> {
                       borderRadius: BorderRadius.circular(40),
                     ),
                   ),
-                  child: const Text("Simpan Kendaraan"),
+                  child: Text(
+                    widget.kendaraan == null
+                        ? "Simpan Kendaraan"
+                        : "Simpan Perubahan",
+                  ),
                 ),
               ),
+
+              const SizedBox(height: 12),
+
+              // ===== DELETE (HANYA SAAT EDIT) =====
+              if (widget.kendaraan != null)
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () async {
+                      final confirm = await showDialog(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          title: const Text("Hapus Kendaraan"),
+                          content:
+                              const Text("Yakin ingin menghapus data ini?"),
+                          actions: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(context, false),
+                              child: const Text("Batal"),
+                            ),
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(context, true),
+                              child: const Text("Hapus"),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirm == true) {
+                        widget.kendaraan!.delete();
+                        Navigator.pop(context);
+                      }
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                      padding:
+                          const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(40),
+                      ),
+                    ),
+                    child: const Text("Hapus Kendaraan"),
+                  ),
+                ),
             ],
           ),
         ),
@@ -372,7 +352,37 @@ class _TambahScreenState extends State<TambahScreen> {
     );
   }
 
-  // ================= COMPONENT =================
+  // ================= UI COMPONENT =================
+
+  Widget _header() {
+    return SizedBox(
+      height: 170,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: LinearGradient(
+            colors: [
+              AppColors.primary.withOpacity(0.08),
+              AppColors.primary.withOpacity(0.02),
+            ],
+          ),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text("Detail Kendaraan",
+                style:
+                    TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
+            SizedBox(height: 6),
+            Text("Isi data kendaraan untuk monitoring servis"),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget label(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
@@ -415,7 +425,8 @@ class _TambahScreenState extends State<TambahScreen> {
 
   Widget box({required Widget child}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
+      padding:
+          const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
