@@ -31,27 +31,9 @@ class _TambahScreenState extends State<TambahScreen> {
   Future<void> pickDate() async {
     DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: selectedDate ?? DateTime.now(),
+      initialDate: DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
-
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primary, // 🔥 warna utama (biru kamu)
-              onPrimary: Colors.white,    // warna teks di header
-              onSurface: AppColors.textPrimary, // warna teks kalender
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.primary, // tombol OK & Cancel
-              ),
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
 
     if (picked != null) {
