@@ -4,6 +4,7 @@ import 'tambah_screen.dart';
 import '../models/kendaraan.dart';
 import '../widgets/kendaraan_card.dart';
 import '../app_colors.dart';
+import 'detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -257,6 +258,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                   child: KendaraanCard(
                                     key: ValueKey(kendaraan.key),
                                     kendaraan: kendaraan,
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => DetailScreen(kendaraan: kendaraan),
+                                        ),
+                                      );
+                                    },
                                   ),
                                 );
                               },

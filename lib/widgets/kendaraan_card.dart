@@ -5,8 +5,13 @@ import '../screens/tambah_screen.dart';
 
 class KendaraanCard extends StatelessWidget {
   final Kendaraan kendaraan;
+  final VoidCallback? onTap; // 🔥 TAMBAHAN
 
-  const KendaraanCard({super.key, required this.kendaraan});
+  const KendaraanCard({
+    super.key,
+    required this.kendaraan,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +19,6 @@ class KendaraanCard extends StatelessWidget {
     final now = DateTime.now();
     final difference = nextService.difference(now).inDays;
 
-    // ===== STATUS LOGIC =====
     final isOverdue = difference < 0;
     final isUrgent = difference >= 0 && difference <= 3;
     final isSoon = difference > 3 && difference <= 7;
@@ -41,249 +45,248 @@ class KendaraanCard extends StatelessWidget {
       statusDesc = "Kondisi Prima";
     }
 
-    return Dismissible(
-      key: Key(kendaraan.key.toString()),
-      direction: DismissDirection.endToStart,
+    return GestureDetector(
+      onTap: onTap, // 🔥 TAP KE DETAIL
+      child: Dismissible(
+        key: Key(kendaraan.key.toString()),
+        direction: DismissDirection.endToStart,
 
-      // 🔥 BACKGROUND SWIPE
-      background: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        alignment: Alignment.centerRight,
-        decoration: BoxDecoration(
-          color: Colors.red,
-          borderRadius: BorderRadius.circular(22),
+        background: Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          alignment: Alignment.centerRight,
+          decoration: BoxDecoration(
+            color: Colors.red,
+            borderRadius: BorderRadius.circular(22),
+          ),
+          child: const Icon(Icons.delete, color: Colors.white, size: 28),
         ),
-        child: const Icon(Icons.delete, color: Colors.white, size: 28),
-      ),
 
-      // 🔥 KONFIRMASI HAPUS
-      confirmDismiss: (direction) async {
-        return await showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text("Hapus Kendaraan"),
-            content: const Text("Yakin ingin menghapus data ini?"),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text("Batal"),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text("Hapus"),
+        confirmDismiss: (direction) async {
+          return await showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: const Text("Hapus Kendaraan"),
+              content: const Text("Yakin ingin menghapus data ini?"),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text("Batal"),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text("Hapus"),
+                ),
+              ],
+            ),
+          );
+        },
+
+        onDismissed: (direction) {
+          kendaraan.delete();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Kendaraan dihapus")),
+          );
+        },
+
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
-        );
-      },
+          child: Row(
+            children: [
 
-      // 🔥 EKSEKUSI HAPUS
-      onDismissed: (direction) {
-        kendaraan.delete();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Kendaraan dihapus")),
-        );
-      },
-
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-
-            // ===== GARIS STATUS =====
-            Container(
-              width: 5,
-              height: 160,
-              decoration: BoxDecoration(
-                color: statusColor,
-                borderRadius: BorderRadius.circular(12),
+              // GARIS STATUS
+              Container(
+                width: 5,
+                height: 160,
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-            ),
 
-            // ===== CONTENT =====
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
 
-                    if (isOverdue || isUrgent || isSoon)
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          statusText,
-                          style: TextStyle(
-                            color: statusColor,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-
-                    // ===== NAMA + ACTION =====
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          kendaraan.nama,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        Row(
-                          children: [
-
-                            // 🔥 EDIT (NANTI KITA SAMBUNG)
-                            GestureDetector(
-                              onTap: () async {
-                                await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => TambahScreen(
-                                      kendaraan: kendaraan, // 🔥 kirim data
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: const Icon(Icons.edit,
-                                  size: 18, color: Colors.grey),
-                            ),
-
-                            const SizedBox(width: 12),
-
-                            // 🔥 DELETE BUTTON (MANUAL)
-                            GestureDetector(
-                              onTap: () async {
-                                final confirm = await showDialog(
-                                  context: context,
-                                  builder: (_) => AlertDialog(
-                                    title: const Text("Hapus Kendaraan"),
-                                    content: const Text(
-                                        "Yakin ingin menghapus data ini?"),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, false),
-                                        child: const Text("Batal"),
-                                      ),
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, true),
-                                        child: const Text("Hapus"),
-                                      ),
-                                    ],
-                                  ),
-                                );
-
-                                if (confirm == true) {
-                                  kendaraan.delete();
-                                }
-                              },
-                              child: const Icon(Icons.delete,
-                                  size: 18, color: Colors.grey),
-                            ),
-                          ],
-                        )
-                      ],
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          "SERVIS TERAKHIR",
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
-                          ),
-                        ),
-                        Text(_formatFullDate(kendaraan.servisTerakhir)),
-                      ],
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          "SERVIS BERIKUTNYA",
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
-                          ),
-                        ),
-                        Text(
-                          _formatShortDate(nextService),
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w900,
-                            color: statusColor,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 14),
-                    Divider(color: AppColors.textSecondary.withOpacity(0.2)),
-
-                    const SizedBox(height: 10),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
+                      if (isOverdue || isUrgent || isSoon)
                         Container(
+                          margin: const EdgeInsets.only(bottom: 8),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 6),
+                              horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: statusColor.withOpacity(0.12),
+                            color: statusColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             statusText,
                             style: TextStyle(
                               color: statusColor,
+                              fontSize: 11,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
-                        Text(
-                          statusDesc,
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
+
+                      // NAMA + ACTION
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            kendaraan.nama,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary,
+                            ),
                           ),
-                        )
-                      ],
-                    ),
-                  ],
+                          Row(
+                            children: [
+
+                              // EDIT
+                              GestureDetector(
+                                onTap: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => TambahScreen(
+                                        kendaraan: kendaraan,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: const Icon(Icons.edit,
+                                    size: 18, color: Colors.grey),
+                              ),
+
+                              const SizedBox(width: 12),
+
+                              // DELETE BUTTON
+                              GestureDetector(
+                                onTap: () async {
+                                  final confirm = await showDialog(
+                                    context: context,
+                                    builder: (_) => AlertDialog(
+                                      title: const Text("Hapus Kendaraan"),
+                                      content: const Text(
+                                          "Yakin ingin menghapus data ini?"),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, false),
+                                          child: const Text("Batal"),
+                                        ),
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, true),
+                                          child: const Text("Hapus"),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+
+                                  if (confirm == true) {
+                                    kendaraan.delete();
+                                  }
+                                },
+                                child: const Icon(Icons.delete,
+                                    size: 18, color: Colors.grey),
+                              ),
+                            ],
+                          )
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "SERVIS TERAKHIR",
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                          Text(_formatFullDate(kendaraan.servisTerakhir)),
+                        ],
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "SERVIS BERIKUTNYA",
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                          Text(
+                            _formatShortDate(nextService),
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w900,
+                              color: statusColor,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 14),
+                      Divider(color: AppColors.textSecondary.withOpacity(0.2)),
+
+                      const SizedBox(height: 10),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: statusColor.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              statusText,
+                              style: TextStyle(
+                                color: statusColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            statusDesc,
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                            ),
+                          )
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

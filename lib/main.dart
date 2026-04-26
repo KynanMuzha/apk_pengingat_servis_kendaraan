@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+
 import 'screens/home_screen.dart';
 import 'models/kendaraan.dart';
+import 'models/service_model.dart'; // 🔥 TAMBAH INI
 import 'app_colors.dart';
 
 void main() async {
@@ -12,9 +14,11 @@ void main() async {
 
   // 🔥 REGISTER ADAPTER
   Hive.registerAdapter(KendaraanAdapter());
+  Hive.registerAdapter(ServiceModelAdapter()); // 🔥 WAJIB
 
   // 🔥 BUKA DATABASE
   await Hive.openBox<Kendaraan>('kendaraanBox');
+  await Hive.openBox<ServiceModel>('serviceBox'); // 🔥 WAJIB
 
   runApp(const MyApp());
 }
@@ -28,8 +32,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
 
       theme: ThemeData(
-        useMaterial3: false, // tetap pakai style kamu
-
+        useMaterial3: false,
         primaryColor: AppColors.primary,
 
         colorScheme: ColorScheme.fromSeed(
