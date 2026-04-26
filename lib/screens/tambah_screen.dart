@@ -29,11 +29,28 @@ class _TambahScreenState extends State<TambahScreen> {
 
   // ================= DATE PICKER =================
   Future<void> pickDate() async {
+    FocusScope.of(context).unfocus();
+
     DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: selectedDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
+
+      // 🔥 FIX WARNA (tidak ungu)
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData(
+            useMaterial3: false,
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              onSurface: AppColors.textPrimary,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (picked != null) {
@@ -66,6 +83,8 @@ class _TambahScreenState extends State<TambahScreen> {
 
   // ================= SIMPAN =================
   void simpan() {
+    FocusScope.of(context).unfocus();
+
     if (nameController.text.isEmpty ||
         kmController.text.isEmpty ||
         intervalController.text.isEmpty ||
@@ -78,7 +97,7 @@ class _TambahScreenState extends State<TambahScreen> {
 
     final kendaraan = Kendaraan(
       nama: nameController.text,
-      km: int.parse(kmController.text),
+      km: int.tryParse(kmController.text) ?? 0,
       interval: intervalType == "Hari"
           ? int.parse(intervalController.text)
           : int.parse(intervalController.text) * 30,
@@ -87,6 +106,12 @@ class _TambahScreenState extends State<TambahScreen> {
 
     Navigator.pop(context, kendaraan);
   }
+
+  bool get isValid =>
+      nameController.text.isNotEmpty &&
+      kmController.text.isNotEmpty &&
+      intervalController.text.isNotEmpty &&
+      selectedDate != null;
 
   @override
   Widget build(BuildContext context) {
@@ -125,12 +150,11 @@ class _TambahScreenState extends State<TambahScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              // ================= HEADER (VERSI BAGUS) =================
+              // ================= HEADER (ASLI) =================
               SizedBox(
                 height: 170,
                 child: Stack(
                   children: [
-
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(24),
@@ -142,7 +166,6 @@ class _TambahScreenState extends State<TambahScreen> {
                         ),
                       ),
                     ),
-
                     Positioned(
                       right: -40,
                       top: -20,
@@ -155,7 +178,6 @@ class _TambahScreenState extends State<TambahScreen> {
                         ),
                       ),
                     ),
-
                     Positioned(
                       right: 10,
                       top: 30,
@@ -168,14 +190,12 @@ class _TambahScreenState extends State<TambahScreen> {
                         ),
                       ),
                     ),
-
                     Padding(
                       padding: const EdgeInsets.all(20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 14, vertical: 6),
@@ -192,20 +212,15 @@ class _TambahScreenState extends State<TambahScreen> {
                               ),
                             ),
                           ),
-
                           const SizedBox(height: 14),
-
                           const Text(
                             "Detail Kendaraan",
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w900,
-                              color: AppColors.textPrimary,
                             ),
                           ),
-
                           const SizedBox(height: 6),
-
                           Text(
                             "Tambahkan kendaraan untuk memantau jadwal servis",
                             style: TextStyle(
@@ -222,7 +237,7 @@ class _TambahScreenState extends State<TambahScreen> {
 
               const SizedBox(height: 30),
 
-              // ================= FIELD =================
+              // ================= NAMA =================
               label("NAMA KENDARAAN"),
               inputField(
                 controller: nameController,
@@ -232,6 +247,7 @@ class _TambahScreenState extends State<TambahScreen> {
 
               const SizedBox(height: 20),
 
+              // ================= TANGGAL =================
               label("SERVIS TERAKHIR"),
               GestureDetector(
                 onTap: pickDate,
@@ -246,11 +262,6 @@ class _TambahScreenState extends State<TambahScreen> {
                             ? "Pilih tanggal"
                             : DateFormat('dd MMM yyyy')
                                 .format(selectedDate!),
-                        style: TextStyle(
-                          color: selectedDate == null
-                              ? AppColors.textSecondary
-                              : AppColors.textPrimary,
-                        ),
                       ),
                       const Spacer(),
                       const Icon(Icons.calendar_month),
@@ -261,29 +272,17 @@ class _TambahScreenState extends State<TambahScreen> {
 
               const SizedBox(height: 20),
 
-              label("KILOMETER SAAT INI"),
-              box(
-                child: Row(
-                  children: [
-                    const Icon(Icons.speed, color: AppColors.primary),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextField(
-                        controller: kmController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          hintText: "0",
-                          border: InputBorder.none,
-                        ),
-                      ),
-                    ),
-                    const Text("KM"),
-                  ],
-                ),
+              // ================= KM =================
+              label("KILOMETER"),
+              inputField(
+                controller: kmController,
+                hint: "0",
+                icon: Icons.speed,
               ),
 
               const SizedBox(height: 20),
 
+              // ================= INTERVAL (FIXED) =================
               label("INTERVAL SERVIS"),
               Row(
                 children: [
@@ -349,39 +348,15 @@ class _TambahScreenState extends State<TambahScreen> {
                   ),
                 ),
 
-              const SizedBox(height: 20),
-
-              // ================= INFO =================
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.searchBg,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.info, color: AppColors.primary),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        "Jadwal servis akan dihitung otomatis berdasarkan interval.",
-                        style: TextStyle(color: AppColors.textSecondary),
-                      ),
-                    )
-                  ],
-                ),
-              ),
-
               const SizedBox(height: 30),
 
               // ================= BUTTON =================
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: simpan,
+                  onPressed: isValid ? simpan : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(40),
@@ -398,18 +373,14 @@ class _TambahScreenState extends State<TambahScreen> {
   }
 
   // ================= COMPONENT =================
-
   Widget label(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontWeight: FontWeight.w600,
-          color: AppColors.textSecondary,
-          fontSize: 12,
-        ),
-      ),
+      child: Text(text,
+          style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+              fontSize: 12)),
     );
   }
 
@@ -427,7 +398,10 @@ class _TambahScreenState extends State<TambahScreen> {
           Expanded(
             child: TextField(
               controller: controller,
-              onChanged: onChanged,
+              onChanged: (val) {
+                setState(() {});
+                if (onChanged != null) onChanged(val);
+              },
               decoration: InputDecoration(
                 hintText: hint,
                 border: InputBorder.none,

@@ -1,8 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'screens/home_screen.dart';
+import 'models/kendaraan.dart';
 import 'app_colors.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 🔥 INIT HIVE
+  await Hive.initFlutter();
+
+  // 🔥 REGISTER ADAPTER
+  Hive.registerAdapter(KendaraanAdapter());
+
+  // 🔥 BUKA DATABASE
+  await Hive.openBox<Kendaraan>('kendaraanBox');
+
   runApp(const MyApp());
 }
 
@@ -14,9 +27,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
 
-      // 🔥 INI KUNCINYA
       theme: ThemeData(
-        useMaterial3: false, // ⛔ MATIKAN MATERIAL 3 (penyebab ungu)
+        useMaterial3: false, // tetap pakai style kamu
 
         primaryColor: AppColors.primary,
 
