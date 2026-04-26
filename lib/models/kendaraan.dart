@@ -17,11 +17,15 @@ class Kendaraan extends HiveObject {
   @HiveField(3)
   DateTime servisTerakhir;
 
+  @HiveField(4)
+  String jenis; // Mobil / Motor
+
   Kendaraan({
     required this.nama,
     required this.km,
     required this.interval,
     required this.servisTerakhir,
+    required this.jenis,
   });
 
   // ================= LOGIC =================
@@ -31,23 +35,17 @@ class Kendaraan extends HiveObject {
     return servisTerakhir.add(Duration(days: interval));
   }
 
-  /// 🔥 Selisih hari ke servis berikutnya
+  /// 🔥 Sisa hari ke servis berikutnya
   int get sisaHari {
     return servisBerikutnya.difference(DateTime.now()).inDays;
   }
 
   /// 🔥 Status: terlambat
-  bool get isOverdue {
-    return sisaHari < 0;
-  }
+  bool get isOverdue => sisaHari < 0;
 
   /// 🔥 Status: urgent (0–3 hari)
-  bool get isUrgent {
-    return sisaHari >= 0 && sisaHari <= 3;
-  }
+  bool get isUrgent => sisaHari >= 0 && sisaHari <= 3;
 
   /// 🔥 Status: hampir (4–7 hari)
-  bool get isSoon {
-    return sisaHari > 3 && sisaHari <= 7;
-  }
+  bool get isSoon => sisaHari > 3 && sisaHari <= 7;
 }

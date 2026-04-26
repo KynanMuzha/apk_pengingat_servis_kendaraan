@@ -5,7 +5,7 @@ import '../screens/tambah_screen.dart';
 
 class KendaraanCard extends StatelessWidget {
   final Kendaraan kendaraan;
-  final VoidCallback? onTap; // 🔥 TAMBAHAN
+  final VoidCallback? onTap;
 
   const KendaraanCard({
     super.key,
@@ -46,7 +46,7 @@ class KendaraanCard extends StatelessWidget {
     }
 
     return GestureDetector(
-      onTap: onTap, // 🔥 TAP KE DETAIL
+      onTap: onTap,
       child: Dismissible(
         key: Key(kendaraan.key.toString()),
         direction: DismissDirection.endToStart,
@@ -106,7 +106,7 @@ class KendaraanCard extends StatelessWidget {
           child: Row(
             children: [
 
-              // GARIS STATUS
+              // ===== GARIS STATUS =====
               Container(
                 width: 5,
                 height: 160,
@@ -123,6 +123,7 @@ class KendaraanCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
 
+                      // ===== BADGE STATUS =====
                       if (isOverdue || isUrgent || isSoon)
                         Container(
                           margin: const EdgeInsets.only(bottom: 8),
@@ -142,18 +143,28 @@ class KendaraanCard extends StatelessWidget {
                           ),
                         ),
 
-                      // NAMA + ACTION
+                      // ===== ICON + NAMA =====
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            kendaraan.nama,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textPrimary,
+                          Icon(
+                            kendaraan.jenis == "Mobil"
+                                ? Icons.directions_car
+                                : Icons.motorcycle,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 8),
+
+                          Expanded(
+                            child: Text(
+                              kendaraan.nama,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
                           ),
+
                           Row(
                             children: [
 
@@ -175,7 +186,7 @@ class KendaraanCard extends StatelessWidget {
 
                               const SizedBox(width: 12),
 
-                              // DELETE BUTTON
+                              // DELETE
                               GestureDetector(
                                 onTap: () async {
                                   final confirm = await showDialog(
@@ -209,6 +220,17 @@ class KendaraanCard extends StatelessWidget {
                             ],
                           )
                         ],
+                      ),
+
+                      const SizedBox(height: 6),
+
+                      // ===== LABEL JENIS =====
+                      Text(
+                        kendaraan.jenis,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
+                        ),
                       ),
 
                       const SizedBox(height: 16),

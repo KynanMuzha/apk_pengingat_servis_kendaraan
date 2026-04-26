@@ -3,22 +3,27 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import 'screens/home_screen.dart';
 import 'models/kendaraan.dart';
-import 'models/service_model.dart'; // 🔥 TAMBAH INI
+import 'models/service_model.dart';
 import 'app_colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 🔥 INIT HIVE
+  // ================= INIT HIVE =================
   await Hive.initFlutter();
 
-  // 🔥 REGISTER ADAPTER
-  Hive.registerAdapter(KendaraanAdapter());
-  Hive.registerAdapter(ServiceModelAdapter()); // 🔥 WAJIB
+  // ================= REGISTER ADAPTER =================
+  if (!Hive.isAdapterRegistered(0)) {
+    Hive.registerAdapter(KendaraanAdapter());
+  }
 
-  // 🔥 BUKA DATABASE
+  if (!Hive.isAdapterRegistered(1)) {
+    Hive.registerAdapter(ServiceModelAdapter());
+  }
+
+  // ================= OPEN BOX =================
   await Hive.openBox<Kendaraan>('kendaraanBox');
-  await Hive.openBox<ServiceModel>('serviceBox'); // 🔥 WAJIB
+  await Hive.openBox<ServiceModel>('serviceBox');
 
   runApp(const MyApp());
 }

@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/kendaraan.dart';
 import '../app_colors.dart';
@@ -21,7 +22,29 @@ class _TambahScreenState extends State<TambahScreen> {
   String intervalType = "Hari";
   DateTime? nextService;
 
+  String jenisKendaraan = "Mobil";
+
   bool get isEdit => widget.kendaraan != null;
+
+  // 🔥 RANDOM CONTOH
+  String get contohHint {
+    final mobil = [
+      "Toyota Avanza",
+      "Honda Brio",
+      "Toyota Innova",
+      "Suzuki Ertiga"
+    ];
+
+    final motor = [
+      "Honda Vario 160",
+      "Yamaha NMAX",
+      "Beat Street",
+      "Aerox 155"
+    ];
+
+    final list = jenisKendaraan == "Mobil" ? mobil : motor;
+    return list[Random().nextInt(list.length)];
+  }
 
   @override
   void initState() {
@@ -33,6 +56,8 @@ class _TambahScreenState extends State<TambahScreen> {
       kmController.text = k.km.toString();
       intervalController.text = k.interval.toString();
       selectedDate = k.servisTerakhir;
+      jenisKendaraan = k.jenis;
+
       calculateNextService();
     }
   }
@@ -45,34 +70,17 @@ class _TambahScreenState extends State<TambahScreen> {
     super.dispose();
   }
 
-  // ================= DATE PICKER =================
+  // ================= DATE =================
   Future<void> pickDate() async {
-    FocusScope.of(context).unfocus();
-
     final picked = await showDatePicker(
       context: context,
       initialDate: selectedDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData(
-            useMaterial3: false,
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-              onSurface: AppColors.textPrimary,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
 
     if (picked != null) {
-      setState(() {
-        selectedDate = picked;
-      });
+      setState(() => selectedDate = picked);
       calculateNextService();
     }
   }
@@ -109,6 +117,8 @@ class _TambahScreenState extends State<TambahScreen> {
           ? int.parse(intervalController.text)
           : int.parse(intervalController.text) * 30;
       k.servisTerakhir = selectedDate!;
+      k.jenis = jenisKendaraan;
+
       k.save();
     } else {
       final kendaraan = Kendaraan(
@@ -118,6 +128,7 @@ class _TambahScreenState extends State<TambahScreen> {
             ? int.parse(intervalController.text)
             : int.parse(intervalController.text) * 30,
         servisTerakhir: selectedDate!,
+        jenis: jenisKendaraan,
       );
 
       Navigator.pop(context, kendaraan);
@@ -138,10 +149,7 @@ class _TambahScreenState extends State<TambahScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
 
-      // ================= APPBAR =================
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.primary),
           onPressed: () => Navigator.pop(context),
@@ -154,151 +162,155 @@ class _TambahScreenState extends State<TambahScreen> {
           ),
         ),
         centerTitle: true,
+        backgroundColor: Colors.white,
       ),
 
-      // ================= BODY =================
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
 
-              _header(),
+            _header(),
 
-              const SizedBox(height: 30),
+            const SizedBox(height: 25),
 
-              label("NAMA KENDARAAN"),
-              inputField(
-                controller: nameController,
-                hint: "Contoh: Honda Vario 160",
-                icon: Icons.directions_car,
+            label("JENIS KENDARAAN"),
+            Row(
+              children: [
+                _jenisButton("Mobil", Icons.directions_car),
+                const SizedBox(width: 10),
+                _jenisButton("Motor", Icons.motorcycle),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            label("NAMA KENDARAAN"),
+            inputField(
+              controller: nameController,
+              hint: "Contoh: $contohHint",
+              icon: jenisKendaraan == "Mobil"
+                  ? Icons.directions_car
+                  : Icons.motorcycle,
+            ),
+
+            const SizedBox(height: 20),
+
+            label("SERVIS TERAKHIR"),
+            GestureDetector(
+              onTap: pickDate,
+              child: box(
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_today, color: AppColors.primary),
+                    const SizedBox(width: 10),
+                    Text(
+                      selectedDate == null
+                          ? "Pilih tanggal"
+                          : DateFormat('dd MMM yyyy').format(selectedDate!),
+                    ),
+                    const Spacer(),
+                    const Icon(Icons.calendar_month),
+                  ],
+                ),
               ),
+            ),
 
-              const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-              label("SERVIS TERAKHIR"),
-              GestureDetector(
-                onTap: pickDate,
-                child: box(
-                  child: Row(
-                    children: [
-                      const Icon(Icons.calendar_today, color: AppColors.primary),
-                      const SizedBox(width: 10),
-                      Text(
-                        selectedDate == null
-                            ? "Pilih tanggal"
-                            : DateFormat('dd MMM yyyy').format(selectedDate!),
-                      ),
-                      const Spacer(),
-                      const Icon(Icons.calendar_month),
-                    ],
+            label("KILOMETER"),
+            inputField(
+              controller: kmController,
+              hint: "0",
+              icon: Icons.speed,
+            ),
+
+            const SizedBox(height: 20),
+
+            label("INTERVAL SERVIS"),
+            Row(
+              children: [
+                Expanded(
+                  child: inputField(
+                    controller: intervalController,
+                    hint: "Masukkan interval",
+                    icon: Icons.refresh,
+                    onChanged: (_) => calculateNextService(),
                   ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: box(
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: intervalType,
+                        isExpanded: true,
+                        items: const [
+                          DropdownMenuItem(value: "Hari", child: Text("Hari")),
+                          DropdownMenuItem(value: "Bulan", child: Text("Bulan")),
+                        ],
+                        onChanged: (value) {
+                          setState(() => intervalType = value!);
+                          calculateNextService();
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            if (nextService != null)
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.schedule, color: AppColors.primary),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        "Servis berikutnya: ${DateFormat('dd MMM yyyy').format(nextService!)}",
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
-              const SizedBox(height: 20),
+            const SizedBox(height: 30),
 
-              label("KILOMETER"),
-              inputField(
-                controller: kmController,
-                hint: "0",
-                icon: Icons.speed,
-              ),
-
-              const SizedBox(height: 20),
-
-              label("INTERVAL SERVIS"),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: inputField(
-                      controller: intervalController,
-                      hint: "Masukkan interval",
-                      icon: Icons.refresh,
-                      onChanged: (_) => calculateNextService(),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 1,
-                    child: box(
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: intervalType,
-                          isExpanded: true,
-                          items: const [
-                            DropdownMenuItem(value: "Hari", child: Text("Hari")),
-                            DropdownMenuItem(value: "Bulan", child: Text("Bulan")),
-                          ],
-                          onChanged: (value) {
-                            setState(() {
-                              intervalType = value!;
-                            });
-                            calculateNextService();
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-
-              if (nextService != null)
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.schedule, color: AppColors.primary),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          "Servis berikutnya: ${DateFormat('dd MMM yyyy').format(nextService!)}",
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-              const SizedBox(height: 30),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: isValid ? simpan : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(40),
-                    ),
-                  ),
-                  child: Text(
-                    isEdit ? "Simpan Perubahan" : "Simpan Kendaraan",
-                  ),
+            ElevatedButton(
+              onPressed: isValid ? simpan : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                minimumSize: const Size(double.infinity, 55),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(40),
                 ),
               ),
-            ],
-          ),
+              child: Text(
+                isEdit ? "Simpan Perubahan" : "Simpan Kendaraan",
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // ================= HEADER =================
+  // ================= HEADER BAGUS =================
   Widget _header() {
     return SizedBox(
       height: 170,
       child: Stack(
         children: [
+
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
@@ -310,6 +322,7 @@ class _TambahScreenState extends State<TambahScreen> {
               ),
             ),
           ),
+
           Positioned(
             right: -40,
             top: -20,
@@ -322,32 +335,38 @@ class _TambahScreenState extends State<TambahScreen> {
               ),
             ),
           ),
+
           Positioned(
             right: 10,
             top: 30,
             child: Opacity(
-              opacity: 0.1,
+              opacity: 0.12,
               child: Icon(
-                Icons.directions_car,
+                jenisKendaraan == "Mobil"
+                    ? Icons.directions_car
+                    : Icons.motorcycle,
                 size: 120,
                 color: AppColors.primary,
               ),
             ),
           ),
+
           Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
                     color: AppColors.primary,
                     borderRadius: BorderRadius.circular(30),
                   ),
                   child: Text(
-                    isEdit ? "EDIT DATA" : "DATA BARU",
+                    jenisKendaraan,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 11,
@@ -355,20 +374,22 @@ class _TambahScreenState extends State<TambahScreen> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 14),
+
                 Text(
-                  isEdit ? "Edit Kendaraan" : "Detail Kendaraan",
+                  isEdit ? "Edit Kendaraan" : "Tambah Kendaraan",
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
+
                 const SizedBox(height: 6),
-                Text(
-                  isEdit
-                      ? "Perbarui data kendaraan untuk memantau servis"
-                      : "Tambahkan kendaraan untuk memantau servis",
-                  style: const TextStyle(
+
+                const Text(
+                  "Kelola kendaraan untuk memantau servis",
+                  style: TextStyle(
                     fontSize: 13,
                     color: AppColors.textSecondary,
                   ),
@@ -381,18 +402,55 @@ class _TambahScreenState extends State<TambahScreen> {
     );
   }
 
-  // ================= COMPONENT =================
+  Widget _jenisButton(String jenis, IconData icon) {
+    final selected = jenisKendaraan == jenis;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => jenisKendaraan = jenis),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppColors.primary.withOpacity(0.1)
+                : Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected
+                  ? AppColors.primary
+                  : Colors.grey.withOpacity(0.2),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon,
+                  color:
+                      selected ? AppColors.primary : Colors.grey),
+              const SizedBox(width: 6),
+              Text(
+                jenis,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color:
+                      selected ? AppColors.primary : Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget label(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontWeight: FontWeight.w600,
-          color: AppColors.textSecondary,
-          fontSize: 12,
-        ),
-      ),
+      child: Text(text,
+          style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+              fontSize: 12)),
     );
   }
 

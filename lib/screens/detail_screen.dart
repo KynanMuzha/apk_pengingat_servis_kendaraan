@@ -40,7 +40,7 @@ class DetailScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            // 🔥 HEADER BARU (LEBIH PREMIUM)
+            // 🔥 HEADER BARU
             _header(),
 
             const SizedBox(height: 16),
@@ -151,10 +151,13 @@ class DetailScreen extends StatelessWidget {
     );
   }
 
-  // ================= HEADER PREMIUM =================
+  // ================= HEADER =================
   Widget _header() {
+    final isMobil = kendaraan.jenis == "Mobil";
+
     return Container(
-      height: 200,
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         gradient: LinearGradient(
@@ -164,59 +167,69 @@ class DetailScreen extends StatelessWidget {
           ],
         ),
       ),
-      child: Stack(
+      child: Row(
         children: [
 
-          // BULAT BACKGROUND
-          Positioned(
-            right: -40,
-            top: -20,
-            child: Container(
-              width: 180,
-              height: 180,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.all(20),
+          // TEXT
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
 
-                // 🔥 NAMA BESAR
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    kendaraan.jenis,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
                 Text(
                   kendaraan.nama,
                   style: const TextStyle(
-                    fontSize: 26,
+                    fontSize: 24,
                     fontWeight: FontWeight.w900,
                     color: AppColors.textPrimary,
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 6),
 
-                // ICON
-                Row(
-                  children: [
-                    Icon(Icons.directions_car,
-                        size: 50, color: AppColors.primary),
-                    const SizedBox(width: 16),
-                    Container(
-                      width: 2,
-                      height: 40,
-                      color: AppColors.primary.withOpacity(0.3),
-                    ),
-                    const SizedBox(width: 16),
-                    Icon(Icons.motorcycle,
-                        size: 50, color: AppColors.primary),
-                  ],
+                const Text(
+                  "Pantau jadwal servis kendaraan",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
                 ),
               ],
+            ),
+          ),
+
+          // ICON
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.7),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isMobil
+                  ? Icons.directions_car
+                  : Icons.motorcycle,
+              size: 40,
+              color: AppColors.primary,
             ),
           ),
         ],

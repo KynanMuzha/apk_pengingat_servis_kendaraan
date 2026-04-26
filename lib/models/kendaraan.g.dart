@@ -21,13 +21,14 @@ class KendaraanAdapter extends TypeAdapter<Kendaraan> {
       km: fields[1] as int,
       interval: fields[2] as int,
       servisTerakhir: fields[3] as DateTime,
+      jenis: fields[4] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, Kendaraan obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.nama)
       ..writeByte(1)
@@ -35,7 +36,9 @@ class KendaraanAdapter extends TypeAdapter<Kendaraan> {
       ..writeByte(2)
       ..write(obj.interval)
       ..writeByte(3)
-      ..write(obj.servisTerakhir);
+      ..write(obj.servisTerakhir)
+      ..writeByte(4)
+      ..write(obj.jenis);
   }
 
   @override
