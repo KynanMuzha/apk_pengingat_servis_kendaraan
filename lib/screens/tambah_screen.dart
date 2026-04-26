@@ -1,132 +1,473 @@
 import 'package:flutter/material.dart';
 import '../models/kendaraan.dart';
+import '../app_colors.dart';
+import 'package:intl/intl.dart';
 
 class TambahScreen extends StatefulWidget {
+  const TambahScreen({super.key});
+
   @override
-  _TambahScreenState createState() => _TambahScreenState();
+  State<TambahScreen> createState() => _TambahScreenState();
 }
 
 class _TambahScreenState extends State<TambahScreen> {
-
-  final namaController = TextEditingController();
-  final kmController = TextEditingController();
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController kmController = TextEditingController();
+  final TextEditingController intervalController = TextEditingController();
 
   DateTime? selectedDate;
-  int interval = 30;
+  String intervalType = "Hari";
+  DateTime? nextService;
 
-  Future<void> pilihTanggal(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+  @override
+  void dispose() {
+    nameController.dispose();
+    kmController.dispose();
+    intervalController.dispose();
+    super.dispose();
+  }
+
+  // ================= DATE PICKER =================
+  Future<void> pickDate() async {
+    DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2020),
+      initialDate: selectedDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
       lastDate: DateTime(2100),
+
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primary, // 🔥 warna utama (biru kamu)
+              onPrimary: Colors.white,    // warna teks di header
+              onSurface: AppColors.textPrimary, // warna teks kalender
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primary, // tombol OK & Cancel
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (picked != null) {
       setState(() {
         selectedDate = picked;
       });
+      calculateNextService();
     }
+  }
+
+  // ================= HITUNG SERVIS =================
+  void calculateNextService() {
+    if (selectedDate == null || intervalController.text.isEmpty) return;
+
+    final interval = int.tryParse(intervalController.text);
+    if (interval == null) return;
+
+    setState(() {
+      if (intervalType == "Hari") {
+        nextService = selectedDate!.add(Duration(days: interval));
+      } else {
+        nextService = DateTime(
+          selectedDate!.year,
+          selectedDate!.month + interval,
+          selectedDate!.day,
+        );
+      }
+    });
+  }
+
+  // ================= SIMPAN =================
+  void simpan() {
+    if (nameController.text.isEmpty ||
+        kmController.text.isEmpty ||
+        intervalController.text.isEmpty ||
+        selectedDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Semua data wajib diisi")),
+      );
+      return;
+    }
+
+    final kendaraan = Kendaraan(
+      nama: nameController.text,
+      km: int.parse(kmController.text),
+      interval: intervalType == "Hari"
+          ? int.parse(intervalController.text)
+          : int.parse(intervalController.text) * 30,
+      servisTerakhir: selectedDate!,
+    );
+
+    Navigator.pop(context, kendaraan);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Tambah Kendaraan")),
+      backgroundColor: AppColors.background,
 
-      body: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          children: [
+      // ================= APPBAR =================
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          "TAMBAH KENDARAAN",
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: Icon(Icons.account_circle, color: AppColors.primary),
+          )
+        ],
+      ),
 
-            TextField(
-              controller: namaController,
-              decoration: InputDecoration(
-                labelText: "Nama Kendaraan",
-                border: OutlineInputBorder(),
-              ),
-            ),
+      // ================= BODY =================
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
 
-            SizedBox(height: 12),
+              // ================= HEADER (VERSI BAGUS) =================
+              SizedBox(
+                height: 170,
+                child: Stack(
+                  children: [
 
-            InkWell(
-              onTap: () => pilihTanggal(context),
-              child: InputDecorator(
-                decoration: InputDecoration(
-                  labelText: "Tanggal Servis Terakhir",
-                  border: OutlineInputBorder(),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(24),
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.primary.withOpacity(0.08),
+                            AppColors.primary.withOpacity(0.02),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    Positioned(
+                      right: -40,
+                      top: -20,
+                      child: Container(
+                        width: 180,
+                        height: 180,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.15),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+
+                    Positioned(
+                      right: 10,
+                      top: 30,
+                      child: Opacity(
+                        opacity: 0.1,
+                        child: Icon(
+                          Icons.directions_car,
+                          size: 120,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            child: const Text(
+                              "DATA BARU",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 14),
+
+                          const Text(
+                            "Detail Kendaraan",
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+
+                          const SizedBox(height: 6),
+
+                          Text(
+                            "Tambahkan kendaraan untuk memantau jadwal servis",
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  selectedDate == null
-                      ? "Pilih tanggal"
-                      : "${selectedDate!.day}-${selectedDate!.month}-${selectedDate!.year}",
+              ),
+
+              const SizedBox(height: 30),
+
+              // ================= FIELD =================
+              label("NAMA KENDARAAN"),
+              inputField(
+                controller: nameController,
+                hint: "Contoh: Honda Vario 160",
+                icon: Icons.directions_car,
+              ),
+
+              const SizedBox(height: 20),
+
+              label("SERVIS TERAKHIR"),
+              GestureDetector(
+                onTap: pickDate,
+                child: box(
+                  child: Row(
+                    children: [
+                      const Icon(Icons.calendar_today,
+                          color: AppColors.primary),
+                      const SizedBox(width: 10),
+                      Text(
+                        selectedDate == null
+                            ? "Pilih tanggal"
+                            : DateFormat('dd MMM yyyy')
+                                .format(selectedDate!),
+                        style: TextStyle(
+                          color: selectedDate == null
+                              ? AppColors.textSecondary
+                              : AppColors.textPrimary,
+                        ),
+                      ),
+                      const Spacer(),
+                      const Icon(Icons.calendar_month),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-            SizedBox(height: 12),
+              const SizedBox(height: 20),
 
-            TextField(
-              controller: kmController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: "Kilometer Terakhir",
-                border: OutlineInputBorder(),
+              label("KILOMETER SAAT INI"),
+              box(
+                child: Row(
+                  children: [
+                    const Icon(Icons.speed, color: AppColors.primary),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: kmController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          hintText: "0",
+                          border: InputBorder.none,
+                        ),
+                      ),
+                    ),
+                    const Text("KM"),
+                  ],
+                ),
               ),
-            ),
 
-            SizedBox(height: 12),
+              const SizedBox(height: 20),
 
-            DropdownButtonFormField<int>(
-              value: interval,
-              decoration: InputDecoration(
-                labelText: "Interval Servis",
-                border: OutlineInputBorder(),
+              label("INTERVAL SERVIS"),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: inputField(
+                      controller: intervalController,
+                      hint: "Masukkan interval",
+                      icon: Icons.refresh,
+                      onChanged: (_) => calculateNextService(),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 1,
+                    child: box(
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: intervalType,
+                          isExpanded: true,
+                          items: const [
+                            DropdownMenuItem(
+                                value: "Hari", child: Text("Hari")),
+                            DropdownMenuItem(
+                                value: "Bulan", child: Text("Bulan")),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              intervalType = value!;
+                            });
+                            calculateNextService();
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              items: [30, 60, 90]
-                  .map((e) => DropdownMenuItem(
-                        value: e,
-                        child: Text("$e Hari"),
-                      ))
-                  .toList(),
-              onChanged: (value) {
-                setState(() {
-                  interval = value!;
-                });
-              },
-            ),
 
-            SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                minimumSize: Size(double.infinity, 50),
+              // ================= PREVIEW =================
+              if (nextService != null)
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.schedule,
+                          color: AppColors.primary),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          "Servis berikutnya: ${DateFormat('dd MMM yyyy').format(nextService!)}",
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              const SizedBox(height: 20),
+
+              // ================= INFO =================
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.searchBg,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info, color: AppColors.primary),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        "Jadwal servis akan dihitung otomatis berdasarkan interval.",
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                    )
+                  ],
+                ),
               ),
-              onPressed: () {
 
-                if (namaController.text.isEmpty ||
-                    kmController.text.isEmpty ||
-                    selectedDate == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Isi semua data!")),
-                  );
-                  return;
-                }
+              const SizedBox(height: 30),
 
-                final kendaraan = Kendaraan(
-                  nama: namaController.text,
-                  servisTerakhir: selectedDate!,
-                  kilometer: int.parse(kmController.text),
-                  intervalHari: interval,
-                );
-
-                Navigator.pop(context, kendaraan);
-              },
-              child: Text("Simpan"),
-            )
-          ],
+              // ================= BUTTON =================
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: simpan,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(40),
+                    ),
+                  ),
+                  child: const Text("Simpan Kendaraan"),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  // ================= COMPONENT =================
+
+  Widget label(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontWeight: FontWeight.w600,
+          color: AppColors.textSecondary,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+
+  Widget inputField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    Function(String)? onChanged,
+  }) {
+    return box(
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              onChanged: onChanged,
+              decoration: InputDecoration(
+                hintText: hint,
+                border: InputBorder.none,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget box({required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color: AppColors.textSecondary.withOpacity(0.1),
+        ),
+      ),
+      child: child,
     );
   }
 }

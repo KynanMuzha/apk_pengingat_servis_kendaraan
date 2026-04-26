@@ -1,17 +1,23 @@
 class Kendaraan {
-  String nama;
-  DateTime servisTerakhir;
-  int kilometer;
-  int intervalHari;
+  final String nama;
+  final int km;
+  final int interval; // dalam hari
+  final DateTime servisTerakhir;
 
   Kendaraan({
     required this.nama,
+    required this.km,
+    required this.interval,
     required this.servisTerakhir,
-    required this.kilometer,
-    required this.intervalHari,
   });
 
+  // 🔥 Hitung servis berikutnya
   DateTime get servisBerikutnya {
-    return servisTerakhir.add(Duration(days: intervalHari));
+    return servisTerakhir.add(Duration(days: interval));
+  }
+
+  // 🔥 Status (urgent atau tidak)
+  bool get isUrgent {
+    return servisBerikutnya.isBefore(DateTime.now());
   }
 }

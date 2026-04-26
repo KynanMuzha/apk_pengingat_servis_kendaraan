@@ -1,299 +1,368 @@
 import 'package:flutter/material.dart';
-import '../models/kendaraan.dart';
 import 'tambah_screen.dart';
-import 'edit_screen.dart';
-import 'detail_screen.dart';
-import 'pengaturan_screen.dart';
+import '../models/kendaraan.dart';
+import '../widgets/kendaraan_card.dart';
+import '../app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  List<Kendaraan> vehicles = [];
 
-  List<Kendaraan> data = [];
-  List<Kendaraan> filteredData = [];
+  Future<void> _tambahKendaraan() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const TambahScreen(),
+      ),
+    );
 
-  @override
-  void initState() {
-    super.initState();
-    filteredData = data;
-  }
-
-  String formatTanggal(DateTime date) {
-    return "${date.day} Jan ${date.year}";
-  }
-
-  void searchKendaraan(String query) {
-    final hasil = data.where((item) {
-      return item.nama.toLowerCase().contains(query.toLowerCase());
-    }).toList();
-
-    setState(() {
-      filteredData = hasil;
-    });
+    if (result != null) {
+      setState(() {
+        vehicles.add(result);
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200],
+      backgroundColor: Colors.white, // 🔥 FIX: appbar jadi bersih
 
+      // ================= APPBAR =================
       appBar: AppBar(
-        backgroundColor: Colors.grey[300],
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
-        title: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: Colors.grey,
-              child: Icon(Icons.close, color: Colors.white),
-            ),
-            SizedBox(width: 10),
-            Text(
-              "Pengingat Servis Kendaraan",
-              style: TextStyle(color: Colors.black),
-            ),
-          ],
+        scrolledUnderElevation: 0,
+        leading: const Icon(Icons.menu, color: AppColors.primary),
+        title: const Text(
+          "GARASI",
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1,
+          ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.settings, color: Colors.black),
-            onPressed: () async {
-              final hasil = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => PengaturanScreen(),
-                ),
-              );
-
-              if (hasil == "refresh") {
-                setState(() {});
-              }
-            },
+        centerTitle: true,
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: Icon(Icons.account_circle,
+                color: AppColors.primary, size: 28),
           )
         ],
       ),
 
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
+      // ================= BODY =================
+      body: Column(
+        children: [
 
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 12),
+          // 🔥 BACKGROUND AREA (TIDAK KENA APPBAR)
+          Expanded(
+            child: Container(
               decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: TextField(
-                onChanged: searchKendaraan,
-                decoration: InputDecoration(
-                  icon: Icon(Icons.search),
-                  hintText: "Cari Kendaraan...",
-                  border: InputBorder.none,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.background,
+                    const Color(0xFFE9EEF8),
+                  ],
                 ),
               ),
-            ),
 
-            SizedBox(height: 16),
+              child: SafeArea(
+                top: false, // 🔥 kunci biar gak nabrak appbar
+                child: Column(
+                  children: [
 
-            Expanded(
-              child: filteredData.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.directions_car,
-                              size: 80, color: Colors.grey),
-                          SizedBox(height: 10),
-                          Text(
-                            "Belum ada kendaraan",
-                            style: TextStyle(color: Colors.grey),
-                          ),
+                    // ================= HERO =================
+                    Container(
+                      margin: const EdgeInsets.fromLTRB(20, 15, 20, 10),
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(22),
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.primary.withOpacity(0.2),
+                            AppColors.primary.withOpacity(0.05),
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.1),
+                            blurRadius: 15,
+                            offset: const Offset(0, 6),
+                          )
                         ],
                       ),
-                    )
-                  : ListView.builder(
-                      itemCount: filteredData.length,
-                      itemBuilder: (context, index) {
-                        final item = filteredData[index];
-                        final nextService = item.servisTerakhir
-                            .add(Duration(days: item.intervalHari));
-
-                        final sisaHari =
-                            nextService.difference(DateTime.now()).inDays;
-
-                        String status;
-                        Color warna;
-                        IconData icon;
-
-                        if (sisaHari < 0) {
-                          status = "Terlambat Servis";
-                          warna = Colors.red;
-                          icon = Icons.error;
-                        } else if (sisaHari <= 3) {
-                          status = "Segera Servis";
-                          warna = Colors.orange;
-                          icon = Icons.warning;
-                        } else {
-                          status = "Aman";
-                          warna = Colors.green;
-                          icon = Icons.check_circle;
-                        }
-
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    DetailScreen(kendaraan: item),
-                              ),
-                            );
-                          },
-                          child: Container(
-                            margin: EdgeInsets.only(bottom: 16),
-                            padding: EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(10),
-                            ),
+                      child: Row(
+                        children: [
+                          Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-
-                                Text(
-                                  item.nama,
+                                const Text(
+                                  "Pengingat Servis",
                                   style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
                                   ),
                                 ),
-
-                                Divider(),
-
+                                const SizedBox(height: 4),
                                 Text(
-                                  "Servis Terakhir: ${formatTanggal(item.servisTerakhir)}",
+                                  vehicles.isEmpty
+                                      ? "Belum ada kendaraan"
+                                      : "${vehicles.length} kendaraan terdaftar",
+                                  style: TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 13,
+                                  ),
                                 ),
-                                Text(
-                                  "Servis Berikutnya: ${formatTanggal(nextService)}",
-                                ),
-
-                                SizedBox(height: 10),
-
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-
-                                    Container(
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: warna.withOpacity(0.2),
-                                        borderRadius:
-                                            BorderRadius.circular(8),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(icon,
-                                              size: 16, color: warna),
-                                          SizedBox(width: 5),
-                                          Text(
-                                            "$status (${sisaHari.abs()} hari)",
-                                            style:
-                                                TextStyle(color: warna),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-
-                                    Row(
-                                      children: [
-                                        GestureDetector(
-                                          onTap: () async {
-                                            final hasil =
-                                                await Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) =>
-                                                    EditScreen(
-                                                        kendaraan: item),
-                                              ),
-                                            );
-
-                                            if (hasil != null) {
-                                              setState(() {
-                                                if (hasil == "delete") {
-                                                  data.remove(item);
-                                                  filteredData.remove(item);
-                                                } else {
-                                                  int i =
-                                                      data.indexOf(item);
-                                                  data[i] = hasil;
-                                                  filteredData[index] =
-                                                      hasil;
-                                                }
-                                              });
-                                            }
-                                          },
-                                          child: Icon(Icons.edit),
-                                        ),
-                                        SizedBox(width: 12),
-                                        GestureDetector(
-                                          onTap: () {
-                                            setState(() {
-                                              data.remove(item);
-                                              filteredData.remove(item);
-                                            });
-                                          },
-                                          child: Icon(Icons.delete),
-                                        ),
-                                      ],
-                                    )
-                                  ],
-                                )
                               ],
                             ),
                           ),
-                        );
-                      },
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.directions_car,
+                              color: AppColors.primary,
+                            ),
+                          )
+                        ],
+                      ),
                     ),
-            )
+
+                    // ================= CONTENT =================
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: vehicles.isEmpty
+
+                            // ================= EMPTY =================
+                            ? Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+
+                                  // 🔥 ICON 3 LAYER
+                                  Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      Container(
+                                        width: 200,
+                                        height: 200,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: AppColors.primary.withOpacity(0.05),
+                                        ),
+                                      ),
+                                      Container(
+                                        width: 150,
+                                        height: 150,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: AppColors.primary.withOpacity(0.1),
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.all(28),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          shape: BoxShape.circle,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(0.08),
+                                              blurRadius: 25,
+                                              offset: const Offset(0, 10),
+                                            )
+                                          ],
+                                        ),
+                                        child: const Icon(
+                                          Icons.directions_car,
+                                          size: 55,
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+
+                                  const SizedBox(height: 30),
+
+                                  const Text(
+                                    "Belum ada kendaraan",
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 10),
+
+                                  Text(
+                                    "Tambahkan kendaraan untuk mulai memantau jadwal servis dengan mudah.",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                      height: 1.6,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 30),
+
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton.icon(
+                                      onPressed: _tambahKendaraan,
+                                      icon: const Icon(Icons.add),
+                                      label: const Text("Tambah Kendaraan"),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.primary,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(vertical: 18),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(40),
+                                        ),
+                                        elevation: 8,
+                                        shadowColor: AppColors.primary.withOpacity(0.4),
+                                      ),
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 12),
+
+                                  Text(
+                                    "Motor • Mobil • Kendaraan lainnya",
+                                    style: TextStyle(
+                                      color: AppColors.textSecondary.withOpacity(0.6),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              )
+
+                            // ================= LIST =================
+                            : ListView.builder(
+                                padding: const EdgeInsets.only(bottom: 100),
+                                itemCount: vehicles.length,
+                                itemBuilder: (context, index) {
+                                  return KendaraanCard(
+                                    kendaraan: vehicles[index],
+                                  );
+                                },
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+
+      // ================= NAVBAR =================
+      bottomNavigationBar: Container(
+        margin: const EdgeInsets.only(bottom: 12), // 🔥 JARAK KE BAWAH (cukup 1 ini)
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
+            ),
           ],
+        ),
+        child: SafeArea(
+          top: false, // 🔥 penting (biar gak double spacing)
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: const [
+              NavItem(icon: Icons.directions_car, label: "Garasi", active: true),
+              NavItem(icon: Icons.show_chart, label: "Riwayat", active: false),
+              NavItem(icon: Icons.settings, label: "Pengaturan", active: false),
+            ],
+          ),
         ),
       ),
 
-      floatingActionButtonLocation:
-          FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: vehicles.isEmpty
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: _tambahKendaraan,
+              backgroundColor: AppColors.primary,
+              icon: const Icon(Icons.add),
+              label: const Text("Tambah"),
+            ),
+    );
+  }
+}
 
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton(
-            backgroundColor: Colors.grey,
-            onPressed: () async {
-              final hasil = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => TambahScreen(),
-                ),
-              );
+// ================= NAV ITEM =================
+class NavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool active;
 
-              if (hasil != null) {
-                setState(() {
-                  data.add(hasil);
-                  filteredData = data;
-                });
-              }
-            },
-            child: Icon(Icons.add, size: 30),
+  const NavItem({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.active,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: active
+                ? AppColors.primary.withOpacity(0.1)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
           ),
-          SizedBox(height: 5),
-          Text("Tambah")
-        ],
-      ),
+          child: Icon(
+            icon,
+            size: 24,
+            color: active
+                ? AppColors.primary
+                : AppColors.textSecondary,
+          ),
+        ),
+
+        const SizedBox(height: 4),
+
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: active ? FontWeight.w600 : FontWeight.normal,
+            color: active
+                ? AppColors.primary
+                : AppColors.textSecondary,
+          ),
+        ),
+      ],
     );
   }
 }
