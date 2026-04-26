@@ -4,7 +4,7 @@ import '../app_colors.dart';
 import 'package:intl/intl.dart';
 
 class TambahScreen extends StatefulWidget {
-  final Kendaraan? kendaraan; // 🔥 tambah ini
+  final Kendaraan? kendaraan;
 
   const TambahScreen({super.key, this.kendaraan});
 
@@ -21,12 +21,13 @@ class _TambahScreenState extends State<TambahScreen> {
   String intervalType = "Hari";
   DateTime? nextService;
 
+  bool get isEdit => widget.kendaraan != null;
+
   @override
   void initState() {
     super.initState();
 
-    // 🔥 AUTO ISI SAAT EDIT
-    if (widget.kendaraan != null) {
+    if (isEdit) {
       final k = widget.kendaraan!;
       nameController.text = k.nama;
       kmController.text = k.km.toString();
@@ -48,7 +49,7 @@ class _TambahScreenState extends State<TambahScreen> {
   Future<void> pickDate() async {
     FocusScope.of(context).unfocus();
 
-    DateTime? picked = await showDatePicker(
+    final picked = await showDatePicker(
       context: context,
       initialDate: selectedDate ?? DateTime.now(),
       firstDate: DateTime(2000),
@@ -100,8 +101,7 @@ class _TambahScreenState extends State<TambahScreen> {
   void simpan() {
     if (!isValid) return;
 
-    if (widget.kendaraan != null) {
-      // 🔥 EDIT MODE
+    if (isEdit) {
       final k = widget.kendaraan!;
       k.nama = nameController.text;
       k.km = int.parse(kmController.text);
@@ -111,7 +111,6 @@ class _TambahScreenState extends State<TambahScreen> {
       k.servisTerakhir = selectedDate!;
       k.save();
     } else {
-      // 🔥 TAMBAH MODE
       final kendaraan = Kendaraan(
         nama: nameController.text,
         km: int.parse(kmController.text),
@@ -134,12 +133,12 @@ class _TambahScreenState extends State<TambahScreen> {
       intervalController.text.isNotEmpty &&
       selectedDate != null;
 
-  // ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
 
+      // ================= APPBAR =================
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -148,9 +147,7 @@ class _TambahScreenState extends State<TambahScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          widget.kendaraan == null
-              ? "TAMBAH KENDARAAN"
-              : "EDIT KENDARAAN", // 🔥 berubah otomatis
+          isEdit ? "EDIT KENDARAAN" : "TAMBAH KENDARAAN",
           style: const TextStyle(
             color: AppColors.textPrimary,
             fontWeight: FontWeight.bold,
@@ -159,6 +156,7 @@ class _TambahScreenState extends State<TambahScreen> {
         centerTitle: true,
       ),
 
+      // ================= BODY =================
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -166,7 +164,6 @@ class _TambahScreenState extends State<TambahScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              // ===== HEADER (TIDAK DIUBAH) =====
               _header(),
 
               const SizedBox(height: 30),
@@ -186,14 +183,12 @@ class _TambahScreenState extends State<TambahScreen> {
                 child: box(
                   child: Row(
                     children: [
-                      const Icon(Icons.calendar_today,
-                          color: AppColors.primary),
+                      const Icon(Icons.calendar_today, color: AppColors.primary),
                       const SizedBox(width: 10),
                       Text(
                         selectedDate == null
                             ? "Pilih tanggal"
-                            : DateFormat('dd MMM yyyy')
-                                .format(selectedDate!),
+                            : DateFormat('dd MMM yyyy').format(selectedDate!),
                       ),
                       const Spacer(),
                       const Icon(Icons.calendar_month),
@@ -234,10 +229,8 @@ class _TambahScreenState extends State<TambahScreen> {
                           value: intervalType,
                           isExpanded: true,
                           items: const [
-                            DropdownMenuItem(
-                                value: "Hari", child: Text("Hari")),
-                            DropdownMenuItem(
-                                value: "Bulan", child: Text("Bulan")),
+                            DropdownMenuItem(value: "Hari", child: Text("Hari")),
+                            DropdownMenuItem(value: "Bulan", child: Text("Bulan")),
                           ],
                           onChanged: (value) {
                             setState(() {
@@ -263,14 +256,12 @@ class _TambahScreenState extends State<TambahScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.schedule,
-                          color: AppColors.primary),
+                      const Icon(Icons.schedule, color: AppColors.primary),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           "Servis berikutnya: ${DateFormat('dd MMM yyyy').format(nextService!)}",
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w600),
+                          style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ),
                     ],
@@ -279,7 +270,6 @@ class _TambahScreenState extends State<TambahScreen> {
 
               const SizedBox(height: 30),
 
-              // ===== SIMPAN =====
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -292,59 +282,10 @@ class _TambahScreenState extends State<TambahScreen> {
                     ),
                   ),
                   child: Text(
-                    widget.kendaraan == null
-                        ? "Simpan Kendaraan"
-                        : "Simpan Perubahan",
+                    isEdit ? "Simpan Perubahan" : "Simpan Kendaraan",
                   ),
                 ),
               ),
-
-              const SizedBox(height: 12),
-
-              // ===== DELETE (HANYA SAAT EDIT) =====
-              if (widget.kendaraan != null)
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () async {
-                      final confirm = await showDialog(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          title: const Text("Hapus Kendaraan"),
-                          content:
-                              const Text("Yakin ingin menghapus data ini?"),
-                          actions: [
-                            TextButton(
-                              onPressed: () =>
-                                  Navigator.pop(context, false),
-                              child: const Text("Batal"),
-                            ),
-                            TextButton(
-                              onPressed: () =>
-                                  Navigator.pop(context, true),
-                              child: const Text("Hapus"),
-                            ),
-                          ],
-                        ),
-                      );
-
-                      if (confirm == true) {
-                        widget.kendaraan!.delete();
-                        Navigator.pop(context);
-                      }
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      side: const BorderSide(color: Colors.red),
-                      padding:
-                          const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(40),
-                      ),
-                    ),
-                    child: const Text("Hapus Kendaraan"),
-                  ),
-                ),
             ],
           ),
         ),
@@ -352,45 +293,106 @@ class _TambahScreenState extends State<TambahScreen> {
     );
   }
 
-  // ================= UI COMPONENT =================
-
+  // ================= HEADER =================
   Widget _header() {
     return SizedBox(
       height: 170,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          gradient: LinearGradient(
-            colors: [
-              AppColors.primary.withOpacity(0.08),
-              AppColors.primary.withOpacity(0.02),
-            ],
+      child: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primary.withOpacity(0.08),
+                  AppColors.primary.withOpacity(0.02),
+                ],
+              ),
+            ),
           ),
-        ),
-        padding: const EdgeInsets.all(20),
-        child: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text("Detail Kendaraan",
-                style:
-                    TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
-            SizedBox(height: 6),
-            Text("Isi data kendaraan untuk monitoring servis"),
-          ],
-        ),
+          Positioned(
+            right: -40,
+            top: -20,
+            child: Container(
+              width: 180,
+              height: 180,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Positioned(
+            right: 10,
+            top: 30,
+            child: Opacity(
+              opacity: 0.1,
+              child: Icon(
+                Icons.directions_car,
+                size: 120,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Text(
+                    isEdit ? "EDIT DATA" : "DATA BARU",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  isEdit ? "Edit Kendaraan" : "Detail Kendaraan",
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  isEdit
+                      ? "Perbarui data kendaraan untuk memantau servis"
+                      : "Tambahkan kendaraan untuk memantau servis",
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
+  // ================= COMPONENT =================
   Widget label(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Text(text,
-          style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-              fontSize: 12)),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontWeight: FontWeight.w600,
+          color: AppColors.textSecondary,
+          fontSize: 12,
+        ),
+      ),
     );
   }
 
@@ -425,8 +427,7 @@ class _TambahScreenState extends State<TambahScreen> {
 
   Widget box({required Widget child}) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
